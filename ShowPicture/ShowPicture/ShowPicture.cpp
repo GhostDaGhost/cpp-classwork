@@ -10,17 +10,14 @@ using namespace std;
 void showImage(const string&);
 
 int main() {
-	showImage("capture.png");
+	showImage("./capture.jpg");
 }
 
 void showImage(const String& JpgName) {
-	//cout << "Current working directory: " << filesystem::current_path() << endl; // DEBUG WHERE THE DIRECTORY IS TO CORRECTLY PLACE IMAGE
-	if (!exists(JpgName)) {
-		cerr << "File does not exist: " << JpgName << endl;
-		return;
-	} else {
-		cout << "File exists!";
-	}
+    if (!exists(JpgName)) {
+        cerr << "File does not exist: " << JpgName << endl;
+        return;
+    }
 
 	// FIND IMAGE
 	Mat image = imread(JpgName, IMREAD_COLOR);
