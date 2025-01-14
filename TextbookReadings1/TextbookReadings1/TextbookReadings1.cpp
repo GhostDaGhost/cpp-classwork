@@ -99,8 +99,13 @@ static void Exercise3_12() {
     char delimiter;
     stringstream ss(inputDate);
 
-	// OUTPUT THE DATE IN THE APPROPRIATE FORMAT
+	// ENSURE YEAR IS PROPERLY FORMATTED
     ss >> day >> delimiter >> month >> delimiter >> year;
+    if (year < 100) {
+        year += (year < 50) ? 2000 : 1900;
+    }
+
+    // OUTPUT THE DATE IN THE APPROPRIATE FORMAT
     cout << months[month - 1] << " " << day << ", " << year << endl;
 }
 
