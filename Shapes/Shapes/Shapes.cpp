@@ -1,6 +1,7 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 
+// NAMESPACES
 using namespace cv;
 using namespace std;
 
@@ -16,7 +17,7 @@ int main(int argumentCount, char* arguments[]) {
 	const int width = 500, height = 500;
 	Mat image = Mat(height, width, CV_8UC3, Scalar(255, 255, 255));
 
-	// Define colors
+	// DEBUG CIRCLE
 	circle(image, cv::Point(250, 100), 50, red, -1);
 
 	// ITERATE THROUGH ARGUMENTS
