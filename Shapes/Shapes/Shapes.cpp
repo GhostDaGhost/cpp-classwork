@@ -28,8 +28,13 @@ enum ShapeType {
 };
 
 // POSITION RANDOMIZER
-Point getRandomPositionPoint() {
+inline Point getRandomPositionPoint() {
 	return Point(rand() % 400 + 50, rand() % 400 + 50);
+}
+
+// RADIUS RANDOMIZER
+inline int getRandomRadius() {
+	return rand() % 50 + 10;
 }
 
 // COLOR RANDOMIZER
@@ -53,7 +58,7 @@ Scalar getRandomColor() {
 
 // CIRCLE DRAWER
 void drawCircle(Mat image) {
-	circle(image, getRandomPositionPoint(), 50, getRandomColor(), -1);
+	circle(image, getRandomPositionPoint(), getRandomRadius(), getRandomColor(), -1);
 }
 
 // ELLIPSE DRAWER
@@ -134,8 +139,8 @@ int main(int argumentCount, char* arguments[]) {
 
 	// MAKE WHITE IMAGE AND ITERATE THROUGH ARGUMENTS
 	Mat image = Mat(WINDOW_HEIGHT, WINDOW_WIDTH, CV_8UC3, Scalar(255, 255, 255));
-	for (int i = 1; i <= argumentCount; i++) {
-		const string argument = toLowerCase(arguments[i]);
+	for (char** argPtr = arguments + 1; argPtr < arguments + argumentCount; ++argPtr) {
+		const string argument = toLowerCase(*argPtr);
 		const ShapeType shapeTypeEnum = getEnumShapeType(argument);
 
 		// TRIGGER INVOKER WITH ENUM TO START DRAWING SHAPES
