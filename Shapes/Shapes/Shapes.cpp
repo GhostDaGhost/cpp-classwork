@@ -1,13 +1,15 @@
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
 #include <opencv2/opencv.hpp>
 
 // NAMESPACES
 using namespace cv;
 using namespace std;
 
-// DEFINES
-constexpr auto WINDOW_WIDTH = 500;;
-constexpr auto WINDOW_HEIGHT = 500;;
+// DEFINES (WASN'T ABLE TO GET IT TO WORK WITH DEFINES, IT MADE ME CHANGE TO THIS INSTEAD)
+constexpr auto WINDOW_WIDTH = 500;
+constexpr auto WINDOW_HEIGHT = 500;
 
 // DEFINE COLORS
 Scalar black(0, 0, 0);
@@ -25,34 +27,58 @@ enum ShapeType {
 	LINE
 };
 
+// POSITION RANDOMIZER
+Point getRandomPositionPoint() {
+	return Point(rand() % 400 + 50, rand() % 400 + 50);
+}
+
+// COLOR RANDOMIZER
+Scalar getRandomColor() {
+	const int randomizedColor = rand() % 5 + 1;
+	switch (randomizedColor) {
+		case 1:
+			return black;
+		case 2:
+			return red;
+		case 3:
+			return green;
+		case 4:
+			return blue;
+		case 5:
+			return purple;
+		default:
+			return red;
+	}
+}
+
 // CIRCLE DRAWER
 void drawCircle(Mat image) {
-	circle(image, Point(250, 100), 50, red, -1);
+	circle(image, getRandomPositionPoint(), 50, getRandomColor(), -1);
 }
 
 // ELLIPSE DRAWER
 void drawEllipse(Mat image) {
-	ellipse(image, Point(250, 400), Size(100, 50), 0, 0, 360, purple, -1);
+	ellipse(image, getRandomPositionPoint(), Size(100, 50), 0, 0, 360, getRandomColor(), -1);
 }
 
 // RECTANGLE DRAWER
 void drawRectangle(Mat image) {
-	rectangle(image, Point(50, 50), Point(150, 150), green, -1);
+	rectangle(image, getRandomPositionPoint(), getRandomPositionPoint(), getRandomColor(), -1);
 }
 
 // TRIANGLE DRAWER
 void drawTriangle(Mat image) {
-	Point triangle[1][3] = { {Point(350, 50), Point(300, 150), Point(400, 150)} };
+	Point triangle[1][3] = { {getRandomPositionPoint(), getRandomPositionPoint(), getRandomPositionPoint()} };
 
 	const Point* ppt[1] = { triangle[0] };
 	const int npt[] = { 3 };
 
-	fillPoly(image, ppt, npt, 1, blue);
+	fillPoly(image, ppt, npt, 1, getRandomColor());
 }
 
 // LINE DRAWER
 void drawLine(Mat image) {
-	line(image, Point(50, 300), Point(450, 300), black, 2);
+	line(image, getRandomPositionPoint(), getRandomPositionPoint(), getRandomColor(), 2);
 }
 
 // GET SHAPE TYPE ENUM BASED OFF ARGUMENT
@@ -103,16 +129,20 @@ int main(int argumentCount, char* arguments[]) {
 		return 0;
 	}
 
+	// SET RANDOM SEED GENERATOR BY CURRENT TIME
+	srand(time(0));
+
 	// MAKE WHITE IMAGE AND ITERATE THROUGH ARGUMENTS
 	Mat image = Mat(WINDOW_HEIGHT, WINDOW_WIDTH, CV_8UC3, Scalar(255, 255, 255));
-	for (int i = 0; i < argumentCount; i++) {
+	for (int i = 1; i <= argumentCount; i++) {
 		const string argument = toLowerCase(arguments[i]);
 		const ShapeType shapeTypeEnum = getEnumShapeType(argument);
 
 		// TRIGGER INVOKER WITH ENUM TO START DRAWING SHAPES
+		cout << "Drawing shape: " << argument << endl;
 		drawShapeWithEnum(image, shapeTypeEnum);
 		imshow("Shapes", image);
-		waitKey(2000);
+		waitKey(1500);
 	}
 
 	// MAKE A LOOP
