@@ -137,17 +137,27 @@ int main(int argumentCount, char* arguments[]) {
 	// SET RANDOM SEED GENERATOR BY CURRENT TIME
 	srand(time(0));
 
-	// MAKE WHITE IMAGE AND ITERATE THROUGH ARGUMENTS
+	// MAKE WHITE IMAGE AND ITERATE THROUGH ARGUMENTS TO FIND A NEW SEED
 	Mat image = Mat(WINDOW_HEIGHT, WINDOW_WIDTH, CV_8UC3, Scalar(255, 255, 255));
 	for (char** argPtr = arguments + 1; argPtr < arguments + argumentCount; ++argPtr) {
-		const string argument = toLowerCase(*argPtr);
-		const ShapeType shapeTypeEnum = getEnumShapeType(argument);
+		if (isdigit(**argPtr) > 0) {
+			cout << "Setting random seed to: " << *argPtr << endl;
+			srand(atoi(*argPtr));
+		}
+	}
 
-		// TRIGGER INVOKER WITH ENUM TO START DRAWING SHAPES
-		cout << "Drawing shape: " << argument << endl;
-		drawShapeWithEnum(image, shapeTypeEnum);
-		imshow("Shapes", image);
-		waitKey(1500);
+	// ITERATE THROUGH ARGUMENTS AGAIN AND DRAW SHAPES
+	for (char** argPtr = arguments + 1; argPtr < arguments + argumentCount; ++argPtr) {
+		if (isdigit(**argPtr) <= 0) {
+			const string argument = toLowerCase(*argPtr);
+			const ShapeType shapeTypeEnum = getEnumShapeType(argument);
+
+			// TRIGGER INVOKER WITH ENUM TO START DRAWING SHAPES
+			cout << "Drawing shape: " << argument << endl;
+			drawShapeWithEnum(image, shapeTypeEnum);
+			imshow("Shapes", image);
+			waitKey(1500);
+		}
 	}
 
 	// MAKE A LOOP
