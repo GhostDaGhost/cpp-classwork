@@ -4,6 +4,8 @@
 
 using namespace std;
 
+// I was unable to do Part V as I couldn't figure it out. Could definitely use advice. I referenced the powerpoint and classmates to make the first few parts.
+
 struct ListNode {
     string data;
     ListNode* next;
