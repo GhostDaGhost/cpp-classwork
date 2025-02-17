@@ -14,11 +14,11 @@ TimeNode* head[30] = { nullptr };
 
 // LINKED LIST INSERTION
 static TimeNode* insertIntoList(double startTime, string& day, string& studentName, TimeNode*& head) {
-	cout << "Reading " << studentName << " for day " << day << " at " << startTime << endl;
+	//cout << "Reading " << studentName << " for day " << day << " at " << startTime << endl;
     TimeNode* current = head;
     while (current) {
         if (current->startTime == startTime && current->day == day) {
-            cout << "Time and day already made - Adding " << studentName << " to day " << day << " at " << startTime << endl;
+            //cout << "Time and day already made - Adding " << studentName << " to day " << day << " at " << startTime << endl;
             current->names.push_back(studentName);
             current->numberOfStudents++;
             return current;
@@ -27,7 +27,7 @@ static TimeNode* insertIntoList(double startTime, string& day, string& studentNa
     }
 
     // CREATE NEW NODE
-	cout << "Adding " << studentName << " to day " << day << " at " << startTime << endl;
+	//cout << "Adding " << studentName << " to day " << day << " at " << startTime << endl;
     TimeNode* newNode = new TimeNode(startTime, day);
     newNode->names.push_back(studentName);
     newNode->next = head;
