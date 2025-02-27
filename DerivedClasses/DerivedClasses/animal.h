@@ -1,3 +1,7 @@
+#ifndef ANIMAL_H
+#define ANIMAL_H
+
+// PACKAGES
 #include <iostream>
 
 // NAMESPACES
@@ -10,3 +14,5 @@ class Animal {
 			cout << "The animal made a sound." << endl;
 		}
 };
+
+#endif

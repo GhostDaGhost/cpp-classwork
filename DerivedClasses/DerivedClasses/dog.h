@@ -1,5 +1,4 @@
 #include <iostream>
-#include "animal.h"
 
 // NAMESPACES
 using namespace std;
