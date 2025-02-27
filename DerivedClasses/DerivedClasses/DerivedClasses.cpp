@@ -9,20 +9,31 @@ using namespace std;
 
 // MAIN
 int main() {
-    cout << "Hello World!\n";
-    Animal animal;
-    animal.makeSound();
+    Animal *animal = new Animal();
+    animal->makeSound();
+	animal->eatFood();
+    delete animal;
 
     // DOG
-    Dog dog;
-    dog.makeSound();
+    Dog *dog = new Dog();
+    dog->makeSound();
+    dog->lick();
+    dog->eatFood();
+    delete dog;
 
     // BIRD
-    Bird bird;
-    bird.makeSound();
+    Bird *bird = new Bird();
+    bird->makeSound();
+    bird->eatFood();
+	bird->fly();
+    delete bird;
 
     // CAT
-    Cat cat;
-    cat.makeSound();
+    Cat *cat = new Cat();
+    cat->makeSound();
+	cat->eatFood();
+    delete cat;
+
+    // END PROGRAM
     return 0;
 }

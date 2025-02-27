@@ -6,7 +6,11 @@ using namespace std;
 // CLASS
 class Cat : public Animal {
 	public:
-		void makeSound() {
+		virtual void makeSound() {
 			cout << "The cat says: MEOW! Purr..." << endl;
+		}
+
+		virtual void eatFood() {
+			cout << "The cat ate fish." << endl;
 		}
 };
