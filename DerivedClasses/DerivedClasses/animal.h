@@ -13,6 +13,10 @@ class Animal {
 		void makeSound() {
 			cout << "The animal made a sound." << endl;
 		}
+
+		void eatFood() {
+			cout << "The animal ate food." << endl;
+		}
 };
 
 #endif
