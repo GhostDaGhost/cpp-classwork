@@ -90,6 +90,10 @@ class Shape {
         int getY() {
             return _y;
         }
+
+        int getSize() {
+			return _size;
+        }
     protected:
         int _x;
         int _y;
@@ -138,18 +142,10 @@ class MazeSquare : public Square {
         // METHODS
         void removeSide(Side s) {
             switch (s) {
-                case Top:
-                    sides.Top = false;
-                    break;
-                case Bottom:
-                    sides.Bottom = false;
-                    break;
-                case Left:
-                    sides.Left = false;
-                    break;
-                case Right:
-                    sides.Right = false;
-                    break;
+                case Top: sides.Top = false; break;
+                case Bottom: sides.Bottom = false; break;
+                case Left: sides.Left = false; break;
+                case Right: sides.Right = false; break;
             }
         }
 
@@ -221,19 +217,49 @@ class MazeSquare : public Square {
 // MAZE CLASS
 class Maze {
     private:
-
+        vector<vector<MazeSquare*>> grid;
+        int rows, cols, cellSize;
     public:
+        // CONSTRUCTOR
+        Maze(int r, int c, int size) : rows(r), cols(c), cellSize(size) {
+            grid.resize(rows);
+            for (int row = 0; row < rows; row++) {
+                grid[row].resize(cols);
+                for (int col = 0; col < cols; col++) {
+                    grid[row][col] = new MazeSquare(col * size, row * size, size);
+                }
+            }
+        }
 
+        // DESTRUCTOR
+        ~Maze() {
+            for (int row = 0; row < rows; row++) {
+                for (int col = 0; col < cols; col++) {
+                    delete grid[row][col];
+                }
+            }
+        }
+
+        // METHODS
+        void drawGrid() {
+            for (int row = 0; row < rows; row++) {
+                for (int col = 0; col < cols; col++) {
+                    Square* squarePtr = grid[row][col];
+                    squarePtr->Draw();
+                }
+            }
+        }
 };
 
 // MAIN FUNCTION
 int main() {
     srand(time(0));
+    init();
 
     // CREATE MAZE
+    Maze maze(4, 6, 50);
+    maze.drawGrid();
 
-
-    // WAIT 10 SECONDS BEFORE CLOSING PROGRAM
+    // END PROGRAM AFTER 10 SECONDS
     waitKey(10000);
-    return 0;
 }
