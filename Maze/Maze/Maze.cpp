@@ -133,7 +133,6 @@ enum Side { Top, Bottom, Left, Right };
 class MazeSquare : public Square {
     private:
         bool visited = false;
-        bool dequeued = false;
         Sides sides = { true, true, true, true };
     public:
         // CONSTRUCTOR
@@ -142,20 +141,27 @@ class MazeSquare : public Square {
         // METHODS
         void removeSide(Side s) {
             switch (s) {
-                case Top: sides.Top = false; break;
-                case Bottom: sides.Bottom = false; break;
-                case Left: sides.Left = false; break;
-                case Right: sides.Right = false; break;
+                case Top:
+                    sides.Top = false;
+                    line(image, Point(_x, _y), Point(_x + _size, _y), Scalar(0, 0, 0), 2);
+                    break;
+                case Bottom:
+                    sides.Bottom = false;
+                    line(image, Point(_x, _y + _size), Point(_x + _size, _y + _size), Scalar(0, 0, 0), 2);
+                    break;
+                case Left:
+                    sides.Left = false;
+                    line(image, Point(_x, _y), Point(_x, _y + _size), Scalar(0, 0, 0), 2);
+                    break;
+                case Right:
+                    sides.Right = false;
+                    line(image, Point(_x + _size, _y), Point(_x + _size, _y + _size), Scalar(0, 0, 0), 2);
+                    break;
             }
         }
 
         void markVisited() {
             visited = true;
-            Draw();
-        }
-
-        void markDequeued() {
-            dequeued = true;
             Draw();
         }
 
@@ -203,13 +209,7 @@ class MazeSquare : public Square {
             // IF VISITED, PUT TEXT OF "V" TO MARK AS VISITED
             if (visited) {
                 changePosition(_x + _size / 4, _y + _size / 2);
-                putText(image, "v", Point(_x + _size / 4, _y + _size / 2), FONT_HERSHEY_SIMPLEX, 0.8, Scalar(255, 255, 255), 2);
-            }
-            
-            // IF DEQUEUED, PUT TEXT OF "Q" TO MARK AS DEQUEUED
-            if (dequeued) {
-                changePosition(_x + 3 * _size / 4, _y + _size / 2);
-                putText(image, "q", Point(_x + 3 * _size / 4, _y + _size / 2), FONT_HERSHEY_SIMPLEX, 0.8, Scalar(255, 255, 255), 2);
+                putText(image, "v", Point(_x + _size / 4, _y + _size / 2), FONT_HERSHEY_SIMPLEX, 0.68, Scalar(255, 255, 255), 1);
             }
         }
 };
@@ -249,16 +249,79 @@ class Maze {
                 }
             }
         }
+
+        void generateMaze() {
+            queue<MazeSquare*> sqPtrs;
+            unsigned int num_of_iterations = rows * cols * 2;
+
+            // RANDOMLY PICK A SQUARE IN THE 2D MAZE ARRAY
+            for (int i = 0; i < num_of_iterations; i++) {
+                sqPtrs.push(grid[rand() % rows][rand() % cols]);
+            }
+
+            // REPEAT UNTIL QUEUE IS EMPTY
+            while (!sqPtrs.empty()) {
+                MazeSquare* sqPtr = sqPtrs.front();
+                sqPtrs.pop();
+
+                // ADD DEQUEUE MARK
+                changePosition(sqPtr->getX() + sqPtr->getSize() / 4, sqPtr->getY() + sqPtr->getSize() / 2);
+                putText(image, "q", Point(sqPtr->getX() + sqPtr->getSize() / 4, sqPtr->getY() + sqPtr->getSize() / 2), FONT_HERSHEY_SIMPLEX, 0.68, Scalar(255, 255, 255), 1);
+
+                // DELAY BEFORE FINDING FOR NEIGHBORING SQUARES
+                waitKey(1500);
+                vector<MazeSquare*> neighborSquarePtrs;
+                if (sqPtr->getY() > 0 && !grid[sqPtr->getY() / sqPtr->getSize() - 1][sqPtr->getX() / sqPtr->getSize()]->isVisited()) {
+                    neighborSquarePtrs.push_back(grid[sqPtr->getY() / sqPtr->getSize() - 1][sqPtr->getX() / sqPtr->getSize()]);
+                }
+
+                if (sqPtr->getY() < rows - 1 && !grid[sqPtr->getY() / sqPtr->getSize() + 1][sqPtr->getX() / sqPtr->getSize()]->isVisited()) {
+                    neighborSquarePtrs.push_back(grid[sqPtr->getY() / sqPtr->getSize() + 1][sqPtr->getX() / sqPtr->getSize()]);
+                }
+
+                if (sqPtr->getX() > 0 && !grid[sqPtr->getY() / sqPtr->getSize()][sqPtr->getX() / sqPtr->getSize() - 1]->isVisited()) {
+                    neighborSquarePtrs.push_back(grid[sqPtr->getY() / sqPtr->getSize()][sqPtr->getX() / sqPtr->getSize() - 1]);
+                }
+
+                if (sqPtr->getX() < cols - 1 && !grid[sqPtr->getY() / sqPtr->getSize()][sqPtr->getX() / sqPtr->getSize() + 1]->isVisited()) {
+                    neighborSquarePtrs.push_back(grid[sqPtr->getY() / sqPtr->getSize()][sqPtr->getX() / sqPtr->getSize() + 1]);
+                }
+
+				// IF NEIGHBORING SQUARES ARE AVAILABLE, RANDOMLY CHOOSE ONE TO MARK AS VISITED
+                if (!neighborSquarePtrs.empty()) {
+                    MazeSquare* neighborSquarePtr = neighborSquarePtrs[rand() % neighborSquarePtrs.size()];
+
+                    // MARK NEIGHBOR AS VISITED AND THEN REMOVE A SIDE
+                    neighborSquarePtr->markVisited();
+                    if (neighborSquarePtr->getX() < sqPtr->getX()) {
+                        sqPtr->removeSide(Left);
+                        neighborSquarePtr->removeSide(Right);
+                    } else if (neighborSquarePtr->getX() > sqPtr->getX()) {
+                        sqPtr->removeSide(Right);
+                        neighborSquarePtr->removeSide(Left);
+                    } else if (neighborSquarePtr->getY() < sqPtr->getY()) {
+                        sqPtr->removeSide(Top);
+                        neighborSquarePtr->removeSide(Bottom);
+                    } else if (neighborSquarePtr->getY() > sqPtr->getY()) {
+                        sqPtr->removeSide(Bottom);
+                        neighborSquarePtr->removeSide(Top);
+                    }
+                    sqPtrs.push(neighborSquarePtr);
+                }
+                waitKey(2000);
+            }
+        }
 };
 
 // MAIN FUNCTION
 int main() {
-    srand(time(0));
+    srand(/*time(0)*/ 100);
     init();
 
     // CREATE MAZE
     Maze maze(4, 6, 50);
     maze.drawGrid();
+    maze.generateMaze();
 
     // END PROGRAM AFTER 10 SECONDS
     waitKey(10000);
