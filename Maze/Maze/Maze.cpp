@@ -207,10 +207,10 @@ class MazeSquare : public Square {
             }
 
             // IF VISITED, PUT TEXT OF "V" TO MARK AS VISITED
-            if (visited) {
+            /*if (visited) {
                 changePosition(_x + _size / 4, _y + _size / 2);
                 putText(image, "v", Point(_x + _size / 4, _y + _size / 2), FONT_HERSHEY_SIMPLEX, 0.68, Scalar(255, 255, 255), 1);
-            }
+            }*/
         }
 };
 
@@ -218,10 +218,10 @@ class MazeSquare : public Square {
 class Maze {
     private:
         vector<vector<MazeSquare*>> grid;
-        int rows, cols, cellSize;
+        int rows, cols;
     public:
         // CONSTRUCTOR
-        Maze(int r, int c, int size) : rows(r), cols(c), cellSize(size) {
+        Maze(int r, int c, int size) : rows(r), cols(c) {
             grid.resize(rows);
             for (int row = 0; row < rows; row++) {
                 grid[row].resize(cols);
@@ -252,63 +252,63 @@ class Maze {
 
         void generateMaze() {
             queue<MazeSquare*> sqPtrs;
-            unsigned int num_of_iterations = rows * cols * 2;
+            MazeSquare* startSquare = grid[0][0];
+            MazeSquare* endSquare = grid[rows - 1][cols - 1];
 
-            // RANDOMLY PICK A SQUARE IN THE 2D MAZE ARRAY
-            for (int i = 0; i < num_of_iterations; i++) {
-                sqPtrs.push(grid[rand() % rows][rand() % cols]);
-            }
+            // REMOVE ENTRY AND EXIT WALLS
+            startSquare->removeSide(Left);
+            endSquare->removeSide(Right);
+            sqPtrs.push(startSquare);
 
             // REPEAT UNTIL QUEUE IS EMPTY
             while (!sqPtrs.empty()) {
                 MazeSquare* sqPtr = sqPtrs.front();
                 sqPtrs.pop();
 
-                // ADD DEQUEUE MARK
-                changePosition(sqPtr->getX() + sqPtr->getSize() / 4, sqPtr->getY() + sqPtr->getSize() / 2);
-                putText(image, "q", Point(sqPtr->getX() + sqPtr->getSize() / 4, sqPtr->getY() + sqPtr->getSize() / 2), FONT_HERSHEY_SIMPLEX, 0.68, Scalar(255, 255, 255), 1);
-
-                // DELAY BEFORE FINDING FOR NEIGHBORING SQUARES
-                waitKey(1500);
+                // SIMPLIFY THE CODE BY CACHING ROW AND COLUMN
                 vector<MazeSquare*> neighborSquarePtrs;
-                if (sqPtr->getY() > 0 && !grid[sqPtr->getY() / sqPtr->getSize() - 1][sqPtr->getX() / sqPtr->getSize()]->isVisited()) {
-                    neighborSquarePtrs.push_back(grid[sqPtr->getY() / sqPtr->getSize() - 1][sqPtr->getX() / sqPtr->getSize()]);
+                int row = sqPtr->getY() / sqPtr->getSize();
+                int col = sqPtr->getX() / sqPtr->getSize();
+
+                // GO THROUGH NEIGHBORS
+                if (row > 0 && !grid[row - 1][col]->isVisited()) {
+                    neighborSquarePtrs.push_back(grid[row - 1][col]);
                 }
 
-                if (sqPtr->getY() < rows - 1 && !grid[sqPtr->getY() / sqPtr->getSize() + 1][sqPtr->getX() / sqPtr->getSize()]->isVisited()) {
-                    neighborSquarePtrs.push_back(grid[sqPtr->getY() / sqPtr->getSize() + 1][sqPtr->getX() / sqPtr->getSize()]);
+                if (row < rows - 1 && !grid[row + 1][col]->isVisited()) {
+                    neighborSquarePtrs.push_back(grid[row + 1][col]);
                 }
 
-                if (sqPtr->getX() > 0 && !grid[sqPtr->getY() / sqPtr->getSize()][sqPtr->getX() / sqPtr->getSize() - 1]->isVisited()) {
-                    neighborSquarePtrs.push_back(grid[sqPtr->getY() / sqPtr->getSize()][sqPtr->getX() / sqPtr->getSize() - 1]);
+                if (col > 0 && !grid[row][col - 1]->isVisited()) {
+                    neighborSquarePtrs.push_back(grid[row][col - 1]);
                 }
 
-                if (sqPtr->getX() < cols - 1 && !grid[sqPtr->getY() / sqPtr->getSize()][sqPtr->getX() / sqPtr->getSize() + 1]->isVisited()) {
-                    neighborSquarePtrs.push_back(grid[sqPtr->getY() / sqPtr->getSize()][sqPtr->getX() / sqPtr->getSize() + 1]);
+                if (col < cols - 1 && !grid[row][col + 1]->isVisited()) {
+                    neighborSquarePtrs.push_back(grid[row][col + 1]);
                 }
 
-				// IF NEIGHBORING SQUARES ARE AVAILABLE, RANDOMLY CHOOSE ONE TO MARK AS VISITED
                 if (!neighborSquarePtrs.empty()) {
                     MazeSquare* neighborSquarePtr = neighborSquarePtrs[rand() % neighborSquarePtrs.size()];
 
-                    // MARK NEIGHBOR AS VISITED AND THEN REMOVE A SIDE
                     neighborSquarePtr->markVisited();
                     if (neighborSquarePtr->getX() < sqPtr->getX()) {
                         sqPtr->removeSide(Left);
                         neighborSquarePtr->removeSide(Right);
-                    } else if (neighborSquarePtr->getX() > sqPtr->getX()) {
+                    }
+                    else if (neighborSquarePtr->getX() > sqPtr->getX()) {
                         sqPtr->removeSide(Right);
                         neighborSquarePtr->removeSide(Left);
-                    } else if (neighborSquarePtr->getY() < sqPtr->getY()) {
+                    }
+                    else if (neighborSquarePtr->getY() < sqPtr->getY()) {
                         sqPtr->removeSide(Top);
                         neighborSquarePtr->removeSide(Bottom);
-                    } else if (neighborSquarePtr->getY() > sqPtr->getY()) {
+                    }
+                    else if (neighborSquarePtr->getY() > sqPtr->getY()) {
                         sqPtr->removeSide(Bottom);
                         neighborSquarePtr->removeSide(Top);
                     }
                     sqPtrs.push(neighborSquarePtr);
                 }
-                waitKey(2000);
             }
         }
 };
@@ -319,7 +319,7 @@ int main() {
     init();
 
     // CREATE MAZE
-    Maze maze(4, 6, 50);
+    Maze maze(12, 12, 50);
     maze.drawGrid();
     maze.generateMaze();
 
