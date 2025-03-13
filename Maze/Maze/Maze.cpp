@@ -2,10 +2,7 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
-#include <stdio.h>
 #include <math.h>
-
-// INCLUDES THAT WE NEED FOR MAZE
 #include <queue>
 #include <vector>
 #include <ctime>
@@ -14,112 +11,25 @@
 using namespace cv;
 using namespace std;
 
-// DEFINES
-#define M_PI   3.14159265358979323846264338327950288
-#define degToRad(angleInDegrees) ((angleInDegrees) * M_PI / 180.0)
+// GLOBAL CONSTANTS
+const char wndname[] = "Maze";
+const unsigned int DELAY = 1;
+const unsigned int END_AFTER_MS = 3000;
 
-// GLOBAL VARIABLES
-char wndname[] = "TurtleWindow";
-Mat image = Mat::zeros(500, 500, CV_8UC3);
-Scalar WHITE(255, 255, 255);
-const int DELAY = 1;
-Point _curPosition(250, 250);
-int _direction = 0;
+const Scalar BLACK(0, 0, 0);
+const Scalar WHITE(255, 255, 255);
 
-// 
-// Must be called in main() before any other drawing function
-//
-void init() {
-    imshow(wndname, image);
-    waitKey(DELAY);
-}
+const Mat image = Mat::zeros(500, 500, CV_8UC3);
+enum Side { Top, Bottom, Left, Right };
+const int dirX[4] = { -1, -1, 0, 0 };
+const int dirY[4] = { 0, 0, 1, -1 };
 
-//
-// Move the pen to the given coordinates without leaving a mark
-// 
-// Note (0,0)     refers to the upper left corner
-//      (500,500) refers to the bottom right corner  
-//
-void changePosition(int x, int y) {
-    _curPosition.x = x;
-    _curPosition.y = y;
-}
+const unsigned int totalRows = 3;
+const unsigned int totalColumns = 5;
+const unsigned int sizeOfSquare = 50;
+const bool IS_IN_PART_1 = true;
 
-//
-// point in the direction given in degrees
-// 0   ==> point right
-// 90  ==> point down
-// 180 ==> point left
-// 270 ==> point up
-//
-void changeDirection(int direction) {
-    _direction = direction;
-}
-
-//
-// Moves the pen forward the given number of pixels
-// Note leaves a mark creating a line from the previous point
-// to the new point
-//
-void moveForward(int nPixels) {
-    int x = static_cast<int>(round(nPixels * cos(degToRad(_direction))));
-    int y = static_cast<int>(round(nPixels * sin(degToRad(_direction))));
-
-    Point newPoint = Point(x + _curPosition.x, y + _curPosition.y);
-    line(image, _curPosition, newPoint, WHITE);
-    _curPosition = newPoint;
-    // cout << "moved to " << newPoint.x << "," << newPoint.y << " dir:" << _direction << endl;
-    imshow(wndname, image);
-    waitKey(DELAY);
-}
-
-class Shape {
-    public:
-        virtual void Draw() = 0;
-
-        Shape(int x, int y, int size = 0) {
-            _x = x;
-            _y = y;
-            _size = size;
-        }
-
-        int getX() {
-            return _x;
-        }
-
-        int getY() {
-            return _y;
-        }
-
-        int getSize() {
-			return _size;
-        }
-    protected:
-        int _x;
-        int _y;
-        int _size;
-};
-
-class Square : public Shape {
-    public:
-        Square(int x, int y, int size) : Shape(x, y, size) {}
-
-        virtual void Draw() {
-            changePosition(_x, _y);
-
-            int myDirection = 0;
-            changeDirection(myDirection);
-            for (int i = 0; i < 4; i++) {
-                moveForward(_size);
-                myDirection += 90;
-                changeDirection(myDirection);
-            }
-        }
-};
-
-/****************
-    MAZE CODE
-****************/
+// SIDES STRUCTURE
 struct Sides {
     bool Top;
     bool Bottom;
@@ -127,42 +37,104 @@ struct Sides {
     bool Right;
 };
 
-enum Side { Top, Bottom, Left, Right };
+// IMAGE REFRESH
+void displayImageWindow() {
+    imshow(wndname, image);
+    waitKey(DELAY);
+}
+
+// SHAPE OBJECT
+class Shape {
+    protected:
+        int _x; int _y; int _size;
+    public:
+        virtual void Draw() = 0;
+        Shape(int x, int y, int size = 0) {
+            _x = x; _y = y; _size = size;
+        }
+
+        int getX() { return _x; }
+        int getY() { return _y; }
+        int getSize() { return _size; }
+};
+
+// SQUARE OBJECT
+class Square : public Shape {
+    public:
+        Square(int x, int y, int size) : Shape(x, y, size) {}
+
+        virtual void Draw() {
+            rectangle(image, Point(_x, _y), Point(_x + _size, _y + _size), WHITE);
+        }
+};
 
 // MAZE SQUARE CLASS
 class MazeSquare : public Square {
     private:
         bool visited = false;
+        bool dequeued = false;
+        bool traversed = false;
+
         Sides sides = { true, true, true, true };
+        Point qMarkPosition = Point(_x + _size * 2 / 3, _y + _size / 2);
+        Point oMarkPosition = Point(_x + _size / 4, _y + _size / 2);
     public:
         // CONSTRUCTOR
         MazeSquare(int x, int y, int size) : Square(x, y, size) {}
 
         // METHODS
-        void removeSide(Side s) {
-            switch (s) {
-                case Top:
-                    sides.Top = false;
-                    line(image, Point(_x, _y), Point(_x + _size, _y), Scalar(0, 0, 0), 2);
-                    break;
-                case Bottom:
-                    sides.Bottom = false;
-                    line(image, Point(_x, _y + _size), Point(_x + _size, _y + _size), Scalar(0, 0, 0), 2);
-                    break;
-                case Left:
-                    sides.Left = false;
-                    line(image, Point(_x, _y), Point(_x, _y + _size), Scalar(0, 0, 0), 2);
-                    break;
-                case Right:
-                    sides.Right = false;
-                    line(image, Point(_x + _size, _y), Point(_x + _size, _y + _size), Scalar(0, 0, 0), 2);
-                    break;
-            }
+        void markDequeued() {
+            dequeued = true;
+            putText(image, "q", qMarkPosition, FONT_HERSHEY_SIMPLEX, 0.5, WHITE, 1);
+            displayImageWindow();
+        }
+
+        void undequeue() {
+            dequeued = false;
+            putText(image, "q", qMarkPosition, FONT_HERSHEY_SIMPLEX, 0.5, BLACK, 1);
+            displayImageWindow();
         }
 
         void markVisited() {
             visited = true;
-            Draw();
+            putText(image, "v", Point(_x + _size / 6, _y + _size / 2), FONT_HERSHEY_SIMPLEX, 0.5, WHITE, 1);
+            displayImageWindow();
+        }
+
+        void markTraversed() {
+            traversed = true;
+            putText(image, "o", oMarkPosition, FONT_HERSHEY_SIMPLEX, 0.5, WHITE, 1);
+            displayImageWindow();
+        }
+
+        void untraverse() {
+            traversed = false;
+            putText(image, "o", oMarkPosition, FONT_HERSHEY_SIMPLEX, 0.5, BLACK, 1);
+            displayImageWindow();
+        }
+
+        void removeSide(Side s) {
+            switch (s) {
+                case Top:
+                    sides.Top = false;
+                    line(image, Point(_x, _y), Point(_x + _size, _y), BLACK, 2);
+                    break;
+                case Bottom:
+                    sides.Bottom = false;
+                    line(image, Point(_x, _y + _size), Point(_x + _size, _y + _size), BLACK, 2);
+                    break;
+                case Left:
+                    sides.Left = false;
+                    line(image, Point(_x, _y), Point(_x, _y + _size), BLACK, 2);
+                    break;
+                case Right:
+                    sides.Right = false;
+                    line(image, Point(_x + _size, _y), Point(_x + _size, _y + _size), BLACK, 2);
+                    break;
+            }
+
+            // REFRESH IMAGE
+            displayImageWindow();
         }
 
         bool isVisited() {
@@ -184,48 +156,20 @@ class MazeSquare : public Square {
 		bool hasRight() {
 			return sides.Right;
 		}
-
-        virtual void Draw() {
-            changePosition(_x, _y);
-            if (sides.Top) {
-                moveForward(_size);
-            }
-
-            changeDirection(90);
-            if (sides.Right) {
-                moveForward(_size);
-            }
-
-            changeDirection(180);
-            if (sides.Bottom) {
-                moveForward(_size);
-            }
-
-            changeDirection(270);
-            if (sides.Left) {
-                moveForward(_size);
-            }
-
-            // IF VISITED, PUT TEXT OF "V" TO MARK AS VISITED
-            /*if (visited) {
-                changePosition(_x + _size / 4, _y + _size / 2);
-                putText(image, "v", Point(_x + _size / 4, _y + _size / 2), FONT_HERSHEY_SIMPLEX, 0.68, Scalar(255, 255, 255), 1);
-            }*/
-        }
 };
 
 // MAZE CLASS
 class Maze {
     private:
         vector<vector<MazeSquare*>> grid;
-        int rows, cols;
+        int num_rows, num_columns;
     public:
         // CONSTRUCTOR
-        Maze(int r, int c, int size) : rows(r), cols(c) {
-            grid.resize(rows);
-            for (int row = 0; row < rows; row++) {
-                grid[row].resize(cols);
-                for (int col = 0; col < cols; col++) {
+        Maze(int r, int c, int size) : num_rows(r), num_columns(c) {
+            grid.resize(num_rows);
+            for (int row = 0; row < num_rows; row++) {
+                grid[row].resize(num_columns);
+                for (int col = 0; col < num_columns; col++) {
                     grid[row][col] = new MazeSquare(col * size, row * size, size);
                 }
             }
@@ -233,8 +177,8 @@ class Maze {
 
         // DESTRUCTOR
         ~Maze() {
-            for (int row = 0; row < rows; row++) {
-                for (int col = 0; col < cols; col++) {
+            for (int row = 0; row < num_rows; row++) {
+                for (int col = 0; col < num_columns; col++) {
                     delete grid[row][col];
                 }
             }
@@ -242,73 +186,98 @@ class Maze {
 
         // METHODS
         void drawGrid() {
-            for (int row = 0; row < rows; row++) {
-                for (int col = 0; col < cols; col++) {
+            for (int row = 0; row < num_rows; row++) {
+                for (int col = 0; col < num_columns; col++) {
                     Square* squarePtr = grid[row][col];
                     squarePtr->Draw();
                 }
             }
         }
 
-        void generateMaze() {
+        void randomTraversing() {
             queue<MazeSquare*> sqPtrs;
-            MazeSquare* startSquare = grid[0][0];
-            MazeSquare* endSquare = grid[rows - 1][cols - 1];
 
-            // REMOVE ENTRY AND EXIT WALLS
-            startSquare->removeSide(Left);
-            endSquare->removeSide(Right);
-            sqPtrs.push(startSquare);
+            // RANDOMLY SELECT SQUARES
+            const unsigned int num_of_iterations = num_rows * num_columns * 2;
+            for (int i = 0; i < num_of_iterations; i++) {
+                sqPtrs.push(grid[rand() % num_rows][rand() % num_columns]);
+            }
 
             // REPEAT UNTIL QUEUE IS EMPTY
             while (!sqPtrs.empty()) {
                 MazeSquare* sqPtr = sqPtrs.front();
                 sqPtrs.pop();
 
-                // SIMPLIFY THE CODE BY CACHING ROW AND COLUMN
+                // MARK SQUARE AS DEQUEUED
+                sqPtr->markDequeued();
+                waitKey(500);
+
+                // INITIALIZE NEIGHBOR SQUARES VECTOR AND SIDES VECTOR
                 vector<MazeSquare*> neighborSquarePtrs;
-                int row = sqPtr->getY() / sqPtr->getSize();
-                int col = sqPtr->getX() / sqPtr->getSize();
+                vector<Side> directions;
 
-                // GO THROUGH NEIGHBORS
-                if (row > 0 && !grid[row - 1][col]->isVisited()) {
-                    neighborSquarePtrs.push_back(grid[row - 1][col]);
+                // FIND NEIGHBORS
+                for (int i = 0; i < 4; i++) {
+                    const int newRowPos = (sqPtr->getY() / sizeOfSquare) + dirX[i];
+                    const int newColPos = (sqPtr->getX() / sizeOfSquare) + dirY[i];
+
+                    // CHECK IF THE NEW POSITION IS VALID
+                    if (newRowPos >= 0 && newRowPos < num_rows && newColPos >= 0 && newColPos < num_columns) {
+                        //cout << "Found a neighbor at " << newRowPos << ", " << newColPos << endl;
+                        MazeSquare* neighborSquarePtr = grid[newRowPos][newColPos];
+                        if (!neighborSquarePtr->isVisited()) {
+                            neighborSquarePtrs.push_back(neighborSquarePtr);
+                            directions.push_back(static_cast<Side>(i));
+                        }
+                    }
                 }
 
-                if (row < rows - 1 && !grid[row + 1][col]->isVisited()) {
-                    neighborSquarePtrs.push_back(grid[row + 1][col]);
-                }
-
-                if (col > 0 && !grid[row][col - 1]->isVisited()) {
-                    neighborSquarePtrs.push_back(grid[row][col - 1]);
-                }
-
-                if (col < cols - 1 && !grid[row][col + 1]->isVisited()) {
-                    neighborSquarePtrs.push_back(grid[row][col + 1]);
-                }
-
+                // IF WE FOUND NEIGHBORS, MARK THEM AS VISITED
                 if (!neighborSquarePtrs.empty()) {
-                    MazeSquare* neighborSquarePtr = neighborSquarePtrs[rand() % neighborSquarePtrs.size()];
-
+                    const int r = rand() % neighborSquarePtrs.size();
+                    MazeSquare* neighborSquarePtr = neighborSquarePtrs[r];
                     neighborSquarePtr->markVisited();
-                    if (neighborSquarePtr->getX() < sqPtr->getX()) {
-                        sqPtr->removeSide(Left);
-                        neighborSquarePtr->removeSide(Right);
+
+					// REMOVE SIDE BETWEEN THE TWO SQUARES
+                    switch (directions[r]) {
+                        case Top:
+                        case Bottom:
+                            sqPtr->removeSide(Top);
+                            neighborSquarePtr->removeSide(Bottom);
+                            break;
+                        case Left:
+                            sqPtr->removeSide(Right);
+                            neighborSquarePtr->removeSide(Left);
+                            break;
+                        case Right:
+                            sqPtr->removeSide(Left);
+                            neighborSquarePtr->removeSide(Right);
+                            break;
                     }
-                    else if (neighborSquarePtr->getX() > sqPtr->getX()) {
-                        sqPtr->removeSide(Right);
-                        neighborSquarePtr->removeSide(Left);
-                    }
-                    else if (neighborSquarePtr->getY() < sqPtr->getY()) {
-                        sqPtr->removeSide(Top);
-                        neighborSquarePtr->removeSide(Bottom);
-                    }
-                    else if (neighborSquarePtr->getY() > sqPtr->getY()) {
-                        sqPtr->removeSide(Bottom);
-                        neighborSquarePtr->removeSide(Top);
-                    }
-                    sqPtrs.push(neighborSquarePtr);
                 }
+
+                // REMOVE THE Q MARK FROM THE DEQUEUED SQUARE
+                waitKey(1000);
+                sqPtr->undequeue();
+            }
+        }
+
+        void prepareMazeForSolving() {
+            MazeSquare* startingSquare = grid[0][0];
+            MazeSquare* endingSquare = grid[num_rows - 1][num_columns - 1];
+
+            // REMOVE ENTRANCE AND EXIT SIDES OF FIRST AND LAST SQUARES
+            startingSquare->removeSide(Left);
+            endingSquare->removeSide(Right);
+
+            // CREATE QUEUE AND INSERT STARTING SQUARE
+            queue<MazeSquare*> adjoiningSquares;
+            adjoiningSquares.push(startingSquare);
+
+            // MARK STARTING SQUARE AS VISITED AND GO THROUGH QUEUE UNTIL EMPTY
+            startingSquare->markVisited();
+            while (!adjoiningSquares.empty()) {
+                //
             }
         }
 };
@@ -316,13 +285,17 @@ class Maze {
 // MAIN FUNCTION
 int main() {
     srand(/*time(0)*/ 100);
-    init();
+    displayImageWindow();
 
     // CREATE MAZE
-    Maze maze(12, 12, 50);
+    Maze maze(totalRows, totalColumns, sizeOfSquare);
     maze.drawGrid();
-    maze.generateMaze();
+    if (IS_IN_PART_1) {
+        maze.randomTraversing();
+    } else {
+        maze.prepareMazeForSolving();
+    }
 
-    // END PROGRAM AFTER 10 SECONDS
-    waitKey(10000);
+    // END PROGRAM
+    waitKey(END_AFTER_MS);
 }
