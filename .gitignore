@@ -365,3 +365,4 @@ FodyWeavers.xsd
 # CMake
 build
 .DS_Store
+*.dSYM
