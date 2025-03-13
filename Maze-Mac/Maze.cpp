@@ -195,7 +195,7 @@ class Maze {
         }
 
         void randomTraversing() {
-            queue<Square*> sqPtrs;
+            queue<MazeSquare*> sqPtrs;
 
             // RANDOMLY SELECT SQUARES
             const unsigned int num_of_iterations = num_rows * num_columns * 2;
@@ -205,7 +205,7 @@ class Maze {
 
             // REPEAT UNTIL QUEUE IS EMPTY
             while (!sqPtrs.empty()) {
-                MazeSquare* sqPtr = static_cast<MazeSquare*>(sqPtrs.front());
+                MazeSquare* sqPtr = sqPtrs.front();
                 sqPtrs.pop();
 
                 // MARK SQUARE AS DEQUEUED
@@ -235,7 +235,7 @@ class Maze {
 
                 // IF WE FOUND NEIGHBORS, MARK THEM AS VISITED
                 if (!neighborSquarePtrs.empty()) {
-                    cout << "Is this empty?";
+                    cout << "Is this empty?" << endl;
                     MazeSquare* neighborSquarePtr = neighborSquarePtrs[rand() % neighborSquarePtrs.size()];
                     neighborSquarePtr->markVisited();
                 }
