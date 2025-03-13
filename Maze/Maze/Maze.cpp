@@ -19,7 +19,7 @@ const unsigned int END_AFTER_MS = 3000;
 const Scalar BLACK(0, 0, 0);
 const Scalar WHITE(255, 255, 255);
 
-const Mat image = Mat::zeros(500, 500, CV_8UC3);
+Mat image = Mat::zeros(750, 750, CV_8UC3);
 enum Side { Top, Bottom, Left, Right };
 const int dirX[4] = { -1, -1, 0, 0 };
 const int dirY[4] = { 0, 0, 1, -1 };
@@ -27,7 +27,7 @@ const int dirY[4] = { 0, 0, 1, -1 };
 const unsigned int totalRows = 3;
 const unsigned int totalColumns = 5;
 const unsigned int sizeOfSquare = 50;
-const bool IS_IN_PART_1 = true;
+const bool IS_IN_PART_1 = false;
 
 // SIDES STRUCTURE
 struct Sides {
@@ -79,7 +79,6 @@ class MazeSquare : public Square {
         Point qMarkPosition = Point(_x + _size * 2 / 3, _y + _size / 2);
         Point oMarkPosition = Point(_x + _size / 4, _y + _size / 2);
     public:
-        // CONSTRUCTOR
         MazeSquare(int x, int y, int size) : Square(x, y, size) {}
 
         // METHODS
@@ -137,25 +136,13 @@ class MazeSquare : public Square {
             displayImageWindow();
         }
 
-        bool isVisited() {
-            return visited;
-        }
+        bool isVisited() const { return visited; }
+        bool isTraversed() const { return traversed; }
 
-        bool hasTop() {
-            return sides.Top;
-        }
-
-		bool hasBottom() {
-			return sides.Bottom;
-		}
-
-		bool hasLeft() {
-			return sides.Left;
-		}
-
-		bool hasRight() {
-			return sides.Right;
-		}
+        bool hasTop() const { return sides.Top; }
+		bool hasBottom() const { return sides.Bottom; }
+		bool hasLeft() const { return sides.Left; }
+		bool hasRight() const { return sides.Right; }
 };
 
 // MAZE CLASS
@@ -164,7 +151,6 @@ class Maze {
         vector<vector<MazeSquare*>> grid;
         int num_rows, num_columns;
     public:
-        // CONSTRUCTOR
         Maze(int r, int c, int size) : num_rows(r), num_columns(c) {
             grid.resize(num_rows);
             for (int row = 0; row < num_rows; row++) {
@@ -276,9 +262,13 @@ class Maze {
 
             // MARK STARTING SQUARE AS VISITED AND GO THROUGH QUEUE UNTIL EMPTY
             startingSquare->markVisited();
-            while (!adjoiningSquares.empty()) {
+            //while (!adjoiningSquares.empty()) {
                 //
-            }
+            //}
+        }
+
+        void solveMaze() {
+            //
         }
 };
 
@@ -288,12 +278,29 @@ int main() {
     displayImageWindow();
 
     // CREATE MAZE
-    Maze maze(totalRows, totalColumns, sizeOfSquare);
-    maze.drawGrid();
     if (IS_IN_PART_1) {
+        Maze maze(totalRows, totalColumns, sizeOfSquare);
+        maze.drawGrid();
         maze.randomTraversing();
     } else {
+        Maze maze(3, 5, sizeOfSquare);
+        maze.drawGrid();
         maze.prepareMazeForSolving();
+        maze.solveMaze();
+        waitKey(4000);
+
+        image = Mat::zeros(750, 750, CV_8UC3);
+        Maze maze2(5, 10, sizeOfSquare);
+        maze2.drawGrid();
+        maze2.prepareMazeForSolving();
+        maze2.solveMaze();
+        waitKey(4000);
+
+        image = Mat::zeros(750, 750, CV_8UC3);
+        Maze maze3(20, 20, 36);
+        maze3.drawGrid();
+        maze3.prepareMazeForSolving();
+        maze3.solveMaze();
     }
 
     // END PROGRAM
